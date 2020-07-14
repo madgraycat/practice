@@ -1,0 +1,36 @@
+---
+- name: Deploy app server
+  hosts: app_servers
+  become: yes
+  vars:
+    app_path: /app_data
+    repo: https://github.com/anfederico/Flaskex.git
+  tasks:
+    - name: Install packages
+      apt:
+        name: "{{ item }}"
+        update_cache: yes
+        state: present
+      with_items:
+        - python-pip
+        - python-all
+    - name: Create dir for project
+      file:
+        path: "{{ app_path }}"
+        state: directory
+    - name: clone project
+      git:
+        repo: "{{ repo }}"
+        dest: "{{ app_path }}"
+    - name: update pip
+      shell: pip install --upgrade pip
+    - name: install requirements
+      shell: pip install -r requirements.txt
+      args:
+        chdir: "{{ app_path }}"
+    - name: run app
+      shell: nohup python app.py &
+      args:
+        chdir: "{{ app_path }}"
+      delegate_to: app_server
+
